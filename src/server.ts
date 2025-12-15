@@ -1,13 +1,23 @@
 import Fastify from 'fastify'
 import websocket from '@fastify/websocket'
+import { orderRoutes } from './api/orders'
 
-const app = Fastify()
-app.register(websocket)
+async function start() {
+  const app = Fastify()
 
-app.get('/', async () => {
-  return { status: 'ok' }
-})
+  await app.register(websocket)
 
-app.listen({ port: 3000 }, () => {
+  await app.register(orderRoutes)
+
+  app.get('/', async () => {
+    return { status: 'ok' }
+  })
+
+  await app.listen({ port: 3000 })
   console.log('Server running on http://localhost:3000')
+}
+
+start().catch(err => {
+  console.error(err)
+  process.exit(1)
 })
