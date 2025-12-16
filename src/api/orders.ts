@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify'
 import { v4 as uuidv4 } from 'uuid'
+import WebSocket from 'ws'
 import { OrderRequest } from '../types/order'
+import { attachSocket, detachSocket } from '../ws/orderSockets'
 
 export async function orderRoutes(app: FastifyInstance) {
 
@@ -22,22 +24,22 @@ export async function orderRoutes(app: FastifyInstance) {
   app.get(
     '/api/orders/execute',
     { websocket: true },
-    (connection) => {
-      connection.socket.send(
-        JSON.stringify({ message: 'WebSocket connected' })
+    (connection: WebSocket, req) => {
+      const { orderId } = req.query as { orderId: string }
+
+      if (!orderId) {
+        connection.close()
+        return
+      }
+
+      attachSocket(orderId, connection)
+
+      connection.send(
+        JSON.stringify({ orderId, status: 'connected' })
       )
 
-      const ping = setInterval(() => {
-        if (connection.socket.readyState === connection.socket.CLOSED) {
-          clearInterval(ping)
-          return
-        }
-        connection.socket.ping()
-      }, 20000)
-
-      connection.socket.on('close', () => {
-        clearInterval(ping)
-        console.log('WebSocket closed')
+      connection.on('close', () => {
+        detachSocket(orderId)
       })
     }
   )
