@@ -3,21 +3,27 @@ import { v4 as uuidv4 } from 'uuid'
 import WebSocket from 'ws'
 import { OrderRequest } from '../types/order'
 import { attachSocket, detachSocket } from '../ws/orderSockets'
+import { simulateOrder } from '../ws/orderLifecycle'
 
 export async function orderRoutes(app: FastifyInstance) {
 
-  app.post('/api/orders/execute', async (req, reply) => {
+  app.post('/api/orders/execute', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['tokenIn', 'tokenOut', 'amount'],
+        properties: {
+          tokenIn: { type: 'string' },
+          tokenOut: { type: 'string' },
+          amount: { type: 'number' }
+        }
+      }
+    }
+  }, async (req, reply) => {
     const body = req.body as OrderRequest
 
-    if (
-      typeof body.tokenIn !== 'string' ||
-      typeof body.tokenOut !== 'string' ||
-      typeof body.amount !== 'number'
-    ) {
-      return reply.status(400).send({ error: 'Invalid order' })
-    }
-
     const orderId = uuidv4()
+
     return { orderId }
   })
 
@@ -37,6 +43,7 @@ export async function orderRoutes(app: FastifyInstance) {
       connection.send(
         JSON.stringify({ orderId, status: 'connected' })
       )
+      simulateOrder(orderId)
 
       connection.on('close', () => {
         detachSocket(orderId)
