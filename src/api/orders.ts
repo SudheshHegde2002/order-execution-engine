@@ -2,8 +2,8 @@ import { FastifyInstance } from 'fastify'
 import { v4 as uuidv4 } from 'uuid'
 import WebSocket from 'ws'
 import { OrderRequest } from '../types/order'
-import { attachSocket, detachSocket } from '../ws/orderSockets'
-import { simulateOrder } from '../ws/orderLifecycle'
+import { attachSocket, detachSocket, hasSocket } from '../ws/orderSockets'
+import { orderQueue } from '../queue/orderQueue'
 
 export async function orderRoutes(app: FastifyInstance) {
 
@@ -30,7 +30,7 @@ export async function orderRoutes(app: FastifyInstance) {
   app.get(
     '/api/orders/execute',
     { websocket: true },
-    (connection: WebSocket, req) => {
+    async (connection: WebSocket, req) => {
       const { orderId } = req.query as { orderId: string }
 
       if (!orderId) {
@@ -43,7 +43,23 @@ export async function orderRoutes(app: FastifyInstance) {
       connection.send(
         JSON.stringify({ orderId, status: 'connected' })
       )
-      simulateOrder(orderId)
+     
+      console.log(`Adding job to queue for orderId: ${orderId}`)
+      console.log(`Socket attached before adding job: ${hasSocket(orderId)}`)
+
+      const job = await orderQueue.add(
+        'execute-order',
+        { orderId },
+        {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000
+          },
+          delay: 500
+        }
+      )
+      console.log(`Job added with id: ${job.id} for orderId: ${orderId}`)
 
       connection.on('close', () => {
         detachSocket(orderId)

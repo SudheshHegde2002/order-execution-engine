@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq'
-import { redis } from './connection'
+import { redisQueue } from '../redis-connection'
 
 export const orderQueue = new Queue('orders', {
-  connection: redis
+  connection: redisQueue
 })
