@@ -4,6 +4,8 @@ import WebSocket from 'ws'
 import { OrderRequest } from '../types/order'
 import { attachSocket, detachSocket, hasSocket } from '../ws/orderSockets'
 import { orderQueue } from '../queue/orderQueue'
+import { createOrder } from '../db/orderRepo'
+
 
 export async function orderRoutes(app: FastifyInstance) {
 
@@ -23,6 +25,13 @@ export async function orderRoutes(app: FastifyInstance) {
     const body = req.body as OrderRequest
 
     const orderId = uuidv4()
+    try {
+      await createOrder(orderId)
+    } catch (error: any) {
+      console.error('Failed to create order:', error)
+      return reply.status(500).send({ error: 'Failed to create order', details: error.message })
+    }
+
 
     return { orderId }
   })

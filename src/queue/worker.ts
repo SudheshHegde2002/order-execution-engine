@@ -53,8 +53,8 @@ const worker = new Worker(
 
       await sleep(randomDelay())
 
-      if (shouldFail()) {
-        throw new Error('Mock execution failed due to some error')
+      if (shouldFail()) { // this is for testing only, set true to hit error asap
+        throw new Error('Mock execution failed due to some random error')
       }
 
       await redisPublisher.publish(
