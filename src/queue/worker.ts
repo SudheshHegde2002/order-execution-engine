@@ -1,5 +1,6 @@
 import { Worker } from 'bullmq'
 import { redisQueue, redisPublisher } from '../redis-connection'
+import { MockDexRouter } from '../dex/MockDexRouter'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -9,12 +10,31 @@ const worker = new Worker(
     const { orderId } = job.data
 
     const steps = [
-      'pending',
-      'routing',
-      'building',
-      'submitted',
-      'confirmed'
-    ]
+        'building',
+        'submitted',
+        'confirmed'
+      ]
+      
+
+    await redisPublisher.publish(
+        'order-status',
+        JSON.stringify({ orderId, status: 'pending' })
+      )
+      await sleep(1000)
+
+    const router = new MockDexRouter()
+    const bestQuote = await router.getBestQuote(1)
+
+    await redisPublisher.publish(
+        'order-status',
+        JSON.stringify({
+          orderId,
+          status: 'routing',
+          dex: bestQuote.dex,
+          price: bestQuote.price
+        })
+      )
+      await sleep(1000)
 
     for (const step of steps) {
       console.log(`Sending status: ${step} for orderId: ${orderId}`)
