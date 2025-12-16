@@ -4,28 +4,27 @@ import { MockDexRouter } from '../dex/MockDexRouter'
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
+const randomDelay = () => 2000 + Math.random() * 1000
+const shouldFail = () => Math.random() < 0.15
+const generateTxHash = () =>
+  '0x' + Math.random().toString(16).slice(2, 10)
+
 const worker = new Worker(
   'orders',
   async job => {
     const { orderId } = job.data
 
-    const steps = [
-        'building',
-        'submitted',
-        'confirmed'
-      ]
-      
-
-    await redisPublisher.publish(
+    try {
+      await redisPublisher.publish(
         'order-status',
         JSON.stringify({ orderId, status: 'pending' })
       )
       await sleep(1000)
 
-    const router = new MockDexRouter()
-    const bestQuote = await router.getBestQuote(1)
+      const router = new MockDexRouter()
+      const bestQuote = await router.getBestQuote(1)
 
-    await redisPublisher.publish(
+      await redisPublisher.publish(
         'order-status',
         JSON.stringify({
           orderId,
@@ -36,16 +35,51 @@ const worker = new Worker(
       )
       await sleep(1000)
 
-    for (const step of steps) {
-      console.log(`Sending status: ${step} for orderId: ${orderId}`)
       await redisPublisher.publish(
         'order-status',
-        JSON.stringify({ orderId, status: step })
+        JSON.stringify({ orderId, status: 'building' })
       )
       await sleep(1000)
+
+      const txHash = generateTxHash()
+      await redisPublisher.publish(
+        'order-status',
+        JSON.stringify({
+          orderId,
+          status: 'submitted',
+          txHash
+        })
+      )
+
+      await sleep(randomDelay())
+
+      if (shouldFail()) {
+        throw new Error('Mock execution failed due to some error')
+      }
+
+      await redisPublisher.publish(
+        'order-status',
+        JSON.stringify({
+          orderId,
+          status: 'confirmed',
+          executedPrice: bestQuote.price
+        })
+      )
+
+    } catch (err: any) {
+      if (job.attemptsMade >= (job.opts.attempts ?? 1) - 1) {
+        await redisPublisher.publish(
+          'order-status',
+          JSON.stringify({
+            orderId,
+            status: 'failed',
+            error: err.message
+          })
+        )
+      }
+
+      throw err
     }
-    
-    console.log(`Completed processing orderId: ${orderId}`)
   },
   {
     connection: redisQueue,
@@ -53,15 +87,15 @@ const worker = new Worker(
   }
 )
 
-worker.on('completed', (job) => {
+worker.on('completed', job => {
   console.log(`Job ${job.id} completed`)
 })
 
 worker.on('failed', (job, err) => {
-  console.error(`Job ${job?.id} failed:`, err)
+  console.error(`Job ${job?.id} failed:`, err.message)
 })
 
-worker.on('error', (err) => {
+worker.on('error', err => {
   console.error('Worker error:', err)
 })
 
