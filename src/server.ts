@@ -1,6 +1,7 @@
 import Fastify from 'fastify'
 import websocket from '@fastify/websocket'
 import { orderRoutes } from './api/orders'
+import './ws/redisListener'
 
 async function start() {
   const app = Fastify()
