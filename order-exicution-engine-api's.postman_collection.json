@@ -1,0 +1,105 @@
+{
+	"info": {
+		"_postman_id": "a7aa7202-d7d0-4ec4-811e-a6a642a7ce5c",
+		"name": "order-exicution-engine-api's",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "38624864"
+	},
+	"item": [
+		{
+			"name": "Create Order",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"try {",
+							"  const json = pm.response.json();",
+							"  console.log(\"Response JSON:\", json);",
+							"",
+							"  if (json.orderId) {",
+							"    pm.environment.set(\"orderId\", json.orderId);",
+							"    console.log(\"orderId set:\", json.orderId);",
+							"  } else {",
+							"    console.log(\"orderId not found in response\");",
+							"  }",
+							"} catch (e) {",
+							"  console.log(\"Failed to parse response\", e);",
+							"}",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tokenIn\": \"SOL\",\n  \"tokenOut\": \"USDC\",\n  \"amount\": 1\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseURL}}/api/orders/execute",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"orders",
+						"execute"
+					]
+				},
+				"description": "**Creates a new market order for execution.**  \n  \nValidates input and returns a unique `orderId` used to subscribe to WebSocket status updates.\n\n**Notes:**\n\n- This endpoint only creates the order and enqueues it for processing\n    \n- Execution progress is streamed via the WebSocket endpoint using the returned orderId"
+			},
+			"response": []
+		},
+		{
+			"name": "Ws Updates",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "{{baseURL}}/api/orders/execute?orderId={{orderId}}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"orders",
+						"execute"
+					],
+					"query": [
+						{
+							"key": "orderId",
+							"value": "{{orderId}}}"
+						}
+					]
+				},
+				"description": "##### **WebSocket endpoint for live order status updates.**  \n  \nWebSocket request creation depends on Postman subscription/workspace capabilities.\n\n##### **Expected lifecycle:**  \n  \nconnected → pending → routing → building → submitted → confirmed | failed"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
