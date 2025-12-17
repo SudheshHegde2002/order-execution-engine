@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "dev": "ts-node src/server.ts",
     "start:api": "node dist/server.js",
     "start:worker": "node dist/queue/worker.js"
@@ -14,10 +14,13 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.0.2",
     "@types/pg": "^8.16.0",
     "@types/ws": "^8.18.1",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.11",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   },
