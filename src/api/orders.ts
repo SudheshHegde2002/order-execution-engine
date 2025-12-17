@@ -9,7 +9,7 @@ import { createOrder } from '../db/orderRepo'
 
 export async function orderRoutes(app: FastifyInstance) {
 
-  app.post('/api/orders/execute', {
+  app.post('/api/orders/execute', {//post method to create order
     schema: {
       body: {
         type: 'object',
@@ -26,7 +26,7 @@ export async function orderRoutes(app: FastifyInstance) {
 
     const orderId = uuidv4()
     try {
-      await createOrder(orderId)
+      await createOrder(orderId)//create order in database
     } catch (error: any) {
       console.error('Failed to create order:', error)
       return reply.status(500).send({ error: 'Failed to create order', details: error.message })
@@ -36,7 +36,7 @@ export async function orderRoutes(app: FastifyInstance) {
     return { orderId }
   })
 
-  app.get(
+  app.get(//websocket method to get order status
     '/api/orders/execute',
     { websocket: true },
     async (connection: WebSocket, req) => {
@@ -56,7 +56,7 @@ export async function orderRoutes(app: FastifyInstance) {
       console.log(`Adding job to queue for orderId: ${orderId}`)
       console.log(`Socket attached before adding job: ${hasSocket(orderId)}`)
 
-      const job = await orderQueue.add(
+      const job = await orderQueue.add(//add job to queue to execute order
         'execute-order',
         { orderId },
         {

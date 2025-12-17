@@ -2,7 +2,7 @@ import { sendStatus } from './orderSockets'
 import { redisSubscriber } from '../redis-connection'
 import { updateOrder } from '../db/orderRepo'
 
-redisSubscriber.subscribe('order-status')
+redisSubscriber.subscribe('order-status')//subscribe to order status
 
 redisSubscriber.on('message', async (_, message) => {
   const payload = JSON.parse(message)
@@ -28,9 +28,9 @@ redisSubscriber.on('message', async (_, message) => {
     if (txHash !== undefined) updates.tx_hash = txHash
     if (error !== undefined) updates.error_reason = error
 
-    await updateOrder(orderId, updates)
+    await updateOrder(orderId, updates)//update order status in database
 
-    sendStatus(orderId, status, payload)
+    sendStatus(orderId, status, payload)//send status to websocket
   } catch (err) {
     console.error('Failed to handle order-status message:', err)
   }

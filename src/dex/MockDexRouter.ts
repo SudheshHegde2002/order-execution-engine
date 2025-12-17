@@ -21,12 +21,13 @@ export class MockDexRouter {
     }
   }
 
-  async getBestQuote(amount: number) {
+  async getBestQuote(amount: number) {//mock router implementation to get best quote
     const [raydium, meteora] = await Promise.all([
       this.getRaydiumQuote(amount),
       this.getMeteoraQuote(amount)
     ])
 
-    return raydium.price > meteora.price ? raydium : meteora
+    const best = raydium.price > meteora.price ? raydium : meteora
+    return { best, raydium, meteora }
   }
 }

@@ -9,7 +9,7 @@ const shouldFail = () => Math.random() < 0.15
 const generateTxHash = () =>
   '0x' + Math.random().toString(16).slice(2, 10)
 
-const worker = new Worker(
+const worker = new Worker(//worker to execute order
   'orders',
   async job => {
     const { orderId } = job.data
@@ -22,15 +22,18 @@ const worker = new Worker(
       await sleep(1000)
 
       const router = new MockDexRouter()
-      const bestQuote = await router.getBestQuote(1)
+      const { best, raydium, meteora } = await router.getBestQuote(1)
 
+      console.log(
+        `[ DEX ROUTING DECISION ] orderId=${orderId} raydium=${raydium.price} meteora=${meteora.price} selected=${best.dex} as this is the best price`
+      )
       await redisPublisher.publish(
         'order-status',
         JSON.stringify({
           orderId,
           status: 'routing',
-          dex: bestQuote.dex,
-          price: bestQuote.price
+          dex: best.dex,
+          price: best.price
         })
       )
       await sleep(1000)
@@ -62,7 +65,7 @@ const worker = new Worker(
         JSON.stringify({
           orderId,
           status: 'confirmed',
-          executedPrice: bestQuote.price
+          executedPrice: best.price
         })
       )
 

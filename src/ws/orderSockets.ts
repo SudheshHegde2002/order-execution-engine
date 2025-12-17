@@ -7,7 +7,7 @@ export function attachSocket(orderId: string, socket: WebSocket) {
   console.log(`Socket attached for orderId: ${orderId}, readyState: ${socket.readyState}`)
 }
 
-export function sendStatus(orderId: string, status: string, data?: any) {
+export function sendStatus(orderId: string, status: string, data?: any) {//send status to websocket
   const socket = orderSockets.get(orderId)
   if (!socket) {
     console.log(`No socket found for orderId: ${orderId}`)

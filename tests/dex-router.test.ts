@@ -11,7 +11,7 @@ test('chooses Raydium when price is better', async () => {
   })
 
   const best = await router.getBestQuote(1)
-  expect(best.dex).toBe('raydium')
+  expect(best.best.dex).toBe('raydium')
 })
 
 test('chooses Meteora when price is better', async () => {
@@ -25,12 +25,12 @@ test('chooses Meteora when price is better', async () => {
   })
 
   const best = await router.getBestQuote(1)
-  expect(best.dex).toBe('meteora')
+  expect(best.best.dex).toBe('meteora')
 })
 
 test('returns deterministic best quote', async () => {
   const router = new MockDexRouter()
   const best = await router.getBestQuote(1)
-  expect(best).toHaveProperty('price')
-  expect(best).toHaveProperty('dex')
+  expect(best.best).toHaveProperty('price')
+  expect(best.best).toHaveProperty('dex')
 })
